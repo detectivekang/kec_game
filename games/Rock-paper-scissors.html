@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>가위바위보 게임 (1인용/2인용 + 단축키 완벽 지원)</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #2c3e50;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        /* 모드 선택 바 */
+        .mode-selector {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .mode-btn {
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: bold;
+            border: 2px solid #bdc3c7;
+            background: #34495e;
+            color: #bdc3c7;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active {
+            background: #e67e22;
+            border-color: #d35400;
+            color: white;
+        }
+
+        /* 점수판 */
+        .score-board {
+            display: flex;
+            justify-content: space-around;
+            width: 380px;
+            margin-bottom: 15px;
+            background: #34495e;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .score-p1 { color: #3498db; }
+        .score-p2 { color: #e74c3c; }
+
+        /* 게임 화면 메인 박스 */
+        .game-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #34495e;
+            width: 520px;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        .result-text {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            min-height: 25px;
+            text-align: center;
+            color: #f1c40f;
+        }
+
+        /* 대결 영역 */
+        .arena {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .section-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #bdc3c7;
+        }
+
+        /* 3개가 나열된 판 */
+        .hands-row {
+            display: flex;
+            gap: 4px;
+            background: #2c3e50;
+            padding: 6px;
+            border-radius: 8px;
+        }
+
+        .mini-hand {
+            font-size: 22px;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            background: #7f8c8d;
+            opacity: 0.3;
+        }
+
+        .mini-hand.active {
+            opacity: 1;
+            background: #f1c40f;
+            transform: scale(1.1);
+        }
+
+        /* 가운데 최종 결과 네모 박스 */
+        .center-box-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .final-box {
+            font-size: 45px;
+            width: 70px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px dashed #bdc3c7;
+            border-radius: 12px;
+            background: #2c3e50;
+        }
+
+        .final-box.selected {
+            border-style: solid;
+            border-color: #2ecc71;
+            background: #e8f8f5;
+            color: #2c3e50;
+            transform: scale(1.08);
+        }
+
+        .vs-label {
+            font-size: 16px;
+            font-weight: bold;
+            color: #bdc3c7;
+        }
+
+        /* 조작 가이드 안내문 */
+        .guide-box {
+            font-size: 13px;
+            color: #ecf0f1;
+            background: #2c3e50;
+            padding: 10px;
+            border-radius: 6px;
+            width: 100%;
+            text-align: center;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
+        /* 버튼 영역 */
+        .btn-container {
+            display: flex;
+            gap: 15px;
+            width: 100%;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 20px;
+            font-size: 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        #btn-start {
+            background-color: #3498db;
+            color: white;
+        }
+        #btn-start:hover { background-color: #2980b9; }
+
+        #btn-stop {
+            background-color: #e74c3c;
+            color: white;
+        }
+        #btn-stop:hover { background-color: #c0392b; }
+        
+        button:disabled {
+            background-color: #7f8c8d;
+            cursor: not-allowed;
+            color: #bdc3c7;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>가위바위보 대결 게임</h1>
+
+    <!-- 모드 선택 버튼 -->
+    <div class="mode-selector">
+        <button class="mode-btn active" id="mode-1p" onclick="setMode('1p')">1인용 (vs AI)</button>
+        <button class="mode-btn" id="mode-2p" onclick="setMode('2p')">2인용 (친구 대결)</button>
+    </div>
+
+    <!-- 점수판 -->
+    <div class="score-board">
+        <div class="score-p1"><span id="label-p1">플레이어</span>: <span id="p1-score">0</span>점</div>
+        <div class="score-p2"><span id="label-p2">AI 봇</span>: <span id="p2-score">0</span>점</div>
+    </div>
+
+    <!-- 게임 화면 박스 -->
+    <div class="game-screen">
+        <div class="result-text" id="result-text">버튼이나 Space 키를 눌러 게임을 시작하세요!</div>
+
+        <div class="arena">
+            <!-- 플레이어 1 영역 -->
+            <div class="section-group">
+                <span class="section-title" id="title-p1">내 패 보기</span>
+                <div class="hands-row">
+                    <div class="mini-hand" id="p1-h-0">✌️</div>
+                    <div class="mini-hand" id="p1-h-1">✊</div>
+                    <div class="mini-hand" id="p1-h-2">✋</div>
+                </div>
+            </div>
+
+            <div class="center-box-container">
+                <span class="vs-label" id="box-label-p1">나</span>
+                <div class="final-box" id="p1-final">❓</div>
+            </div>
+
+            <div class="vs-label" style="font-size: 20px;">VS</div>
+
+            <div class="center-box-container">
+                <span class="vs-label" id="box-label-p2">AI</span>
+                <div class="final-box" id="p2-final">❓</div>
+            </div>
+
+            <!-- 플레이어 2 / AI 영역 -->
+            <div class="section-group">
+                <span class="section-title" id="title-p2">AI 패 보기</span>
+                <div class="hands-row">
+                    <div class="mini-hand" id="p2-h-0">✌️</div>
+                    <div class="mini-hand" id="p2-h-1">✊</div>
+                    <div class="mini-hand" id="p2-h-2">✋</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 조작 설명 -->
+        <div class="guide-box" id="guide-box">
+            <b>[1인용 조작]</b> 시작/정지/다음판: <b>[Space] 키</b> | 게임 리셋: <b>[R] 키</b>
+        </div>
+
+        <!-- 버튼 영역 -->
+        <div class="btn-container">
+            <button id="btn-start">게임 시작 (Space)</button>
+            <button id="btn-stop" disabled>정지하기</button>
+        </div>
+    </div>
+
+    <script>
+        let currentMode = '1p'; // '1p' 또는 '2p'
+
+        const p1ScoreSpan = document.getElementById('p1-score');
+        const p2ScoreSpan = document.getElementById('p2-score');
+        const labelP1 = document.getElementById('label-p1');
+        const labelP2 = document.getElementById('label-p2');
+        const titleP1 = document.getElementById('title-p1');
+        const titleP2 = document.getElementById('title-p2');
+        const boxLabelP1 = document.getElementById('box-label-p1');
+        const boxLabelP2 = document.getElementById('box-label-p2');
+        
+        const resultText = document.getElementById('result-text');
+        const btnStart = document.getElementById('btn-start');
+        const btnStop = document.getElementById('btn-stop');
+        const guideBox = document.getElementById('guide-box');
+
+        const p1FinalBox = document.getElementById('p1-final');
+        const p2FinalBox = document.getElementById('p2-final');
+
+        const hands = ['✌️', '✊', '✋']; 
+        let p1Score = 0;
+        let p2Score = 0;
+        
+        let p1Interval = null;
+        let p2Interval = null;
+        
+        let isRunning = false;
+        let p1Stopped = false;
+        let p2Stopped = false;
+
+        let curP1Index = 0;
+        let curP2Index = 0;
+        let finalP1Hand = '';
+        let finalP2Hand = '';
+
+        // 모드 변경 함수
+        function setMode(mode) {
+            if (isRunning) return; 
+            currentMode = mode;
+            
+            document.getElementById('mode-1p').classList.remove('active');
+            document.getElementById('mode-2p').classList.remove('active');
+
+            if (mode === '1p') {
+                document.getElementById('mode-1p').classList.add('active');
+                labelP1.innerText = '플레이어';
+                labelP2.innerText = 'AI 봇';
+                titleP1.innerText = '내 패 보기';
+                titleP2.innerText = 'AI 패 보기';
+                boxLabelP1.innerText = '나';
+                boxLabelP2.innerText = 'AI';
+                guideBox.innerHTML = `<b>[1인용]</b> 다음판/정지: <b>[Space] 키</b> | 전체 리셋: <b>[R] 키</b>`;
+            } else {
+                document.getElementById('mode-2p').classList.add('active');
+                labelP1.innerText = '플레이어 1';
+                labelP2.innerText = '플레이어 2';
+                titleP1.innerText = 'P1 패 보기';
+                titleP2.innerText = 'P2 패 보기';
+                boxLabelP1.innerText = 'P1';
+                boxLabelP2.innerText = 'P2';
+                guideBox.innerHTML = `<b>[2인용]</b> P1 정지: <b>[Space]</b> / P2 정지: <b>[Enter]</b> / 다음판: <b>[Space]</b> / 리셋: <b>[R]</b>`;
+            }
+            resetGame();
+        }
+
+        // 게임 시작 버튼
+        btnStart.addEventListener('click', startRound);
+
+        function startRound() {
+            if (isRunning) return;
+            isRunning = true;
+            p1Stopped = false;
+            p2Stopped = false;
+
+            btnStart.disabled = true;
+            p1FinalBox.classList.remove('selected');
+            p2FinalBox.classList.remove('selected');
+            p1FinalBox.innerText = '🔄';
+            p2FinalBox.innerText = '🔄';
+
+            if (currentMode === '1p') {
+                btnStart.innerText = '추첨 중...';
+                btnStop.disabled = false;
+                btnStop.innerText = '정지 (Space)';
+                resultText.innerText = '랜덤으로 돌아가는 중! 정지(Space)를 누르세요!';
+                resultText.style.color = '#f1c40f';
+
+                p1Interval = setInterval(() => updateHand('p1'), 70);
+                p2Interval = setInterval(() => updateHand('p2'), 70);
+            } else {
+                btnStart.innerText = '게임 진행 중...';
+                btnStop.disabled = true;
+                btnStop.innerText = '키보드 대기 중';
+                resultText.innerText = '양쪽 다 랜덤 회전 중! P1:[Space], P2:[Enter]!';
+                resultText.style.color = '#f1c40f';
+
+                p1Interval = setInterval(() => updateHand('p1'), 70);
+                p2Interval = setInterval(() => updateHand('p2'), 70);
+            }
+        }
+
+        function updateHand(player) {
+            if (player === 'p1' && p1Stopped) return;
+            if (player === 'p2' && p2Stopped) return;
+
+            if (player === 'p1') {
+                document.querySelectorAll('#p1-h-0, #p1-h-1, #p1-h-2').forEach(el => el.classList.remove('active'));
+                curP1Index = Math.floor(Math.random() * 3);
+                document.getElementById(`p1-h-${curP1Index}`).classList.add('active');
+                p1FinalBox.innerText = hands[curP1Index];
+            } else {
+                document.querySelectorAll('#p2-h-0, #p2-h-1, #p2-h-2').forEach(el => el.classList.remove('active'));
+                curP2Index = Math.floor(Math.random() * 3);
+                document.getElementById(`p2-h-${curP2Index}`).classList.add('active');
+                p2FinalBox.innerText = hands[curP2Index];
+            }
+        }
+
+        // 1인용 정지 버튼 클릭
+        btnStop.addEventListener('click', () => {
+            if (!isRunning || currentMode !== '1p') return;
+            stopP1();
+            stopP2();
+            finishRound();
+        });
+
+        // 키보드 단축키 처리
+        window.addEventListener('keydown', (e) => {
+            // 1. [R] 키: 게임 전체 리셋
+            if (e.key === 'r' || e.key === 'R') {
+                e.preventDefault();
+                resetGame();
+                return;
+            }
+
+            // 2. 게임 정지 상태일 때 [Space] 키: 다음 판 바로 시작
+            if (!isRunning && e.code === 'Space') {
+                e.preventDefault();
+                startRound();
+                return;
+            }
+
+            // 3. 게임 진행 중일 때 키 조작
+            if (isRunning) {
+                if (currentMode === '1p') {
+                    // 1인용: Space 누르면 정지
+                    if (e.code === 'Space') {
+                        e.preventDefault();
+                        stopP1();
+                        stopP2();
+                        finishRound();
+                    }
+                } else if (currentMode === '2p') {
+                    // 2인용: P1은 Space, P2는 Enter로 각각 정지
+                    if (e.code === 'Space' && !p1Stopped) {
+                        e.preventDefault();
+                        stopP1();
+                        checkBothStopped();
+                    }
+
+                    if (e.code === 'Enter' && !p2Stopped) {
+                        e.preventDefault();
+                        stopP2();
+                        checkBothStopped();
+                    }
+                }
+            }
+        });
+
+        function stopP1() {
+            p1Stopped = true;
+            clearInterval(p1Interval);
+            document.getElementById(`p1-h-${curP1Index}`).classList.add('active');
+            p1FinalBox.classList.add('selected');
+            finalP1Hand = hands[curP1Index];
+            p1FinalBox.innerText = finalP1Hand;
+        }
+
+        function stopP2() {
+            p2Stopped = true;
+            clearInterval(p2Interval);
+            document.getElementById(`p2-h-${curP2Index}`).classList.add('active');
+            p2FinalBox.classList.add('selected');
+            finalP2Hand = hands[curP2Index];
+            p2FinalBox.innerText = finalP2Hand;
+        }
+
+        function checkBothStopped() {
+            if (p1Stopped && p2Stopped) {
+                finishRound();
+            } else {
+                if (p1Stopped) resultText.innerText = 'P1 멈춤 완료! P2가 Enter 키를 누르세요!';
+                if (p2Stopped) resultText.innerText = 'P2 멈춤 완료! P1이 Space 키를 누르세요!';
+            }
+        }
+
+        function finishRound() {
+            clearInterval(p1Interval);
+            clearInterval(p2Interval);
+            
+            isRunning = false;
+            btnStart.innerText = '다음 판 시작 (Space)';
+            btnStart.disabled = false;
+            btnStop.disabled = true;
+
+            finalP1Hand = hands[curP1Index];
+            finalP2Hand = hands[curP2Index];
+
+            let message = '';
+            let p1Update = 0;
+            let p2Update = 0;
+
+            if (finalP1Hand === finalP2Hand) {
+                message = `🤝 비겼습니다! (${finalP1Hand} vs ${finalP2Hand})`;
+            } else if (
+                (finalP1Hand === '✌️' && finalP2Hand === '✋') ||
+                (finalP1Hand === '✊' && finalP2Hand === '✌️') ||
+                (finalP1Hand === '✋' && finalP2Hand === '✊')
+            ) {
+                let winnerName = currentMode === '1p' ? '플레이어' : '플레이어 1';
+                message = `🎉 ${winnerName} 승리! (${finalP1Hand} vs ${finalP2Hand})`;
+                p1Update = 1;
+            } else {
+                let winnerName = currentMode === '1p' ? 'AI 봇' : '플레이어 2';
+                message = `🎉 ${winnerName} 승리! (${finalP1Hand} vs ${finalP2Hand})`;
+                p2Update = 1;
+            }
+
+            resultText.innerText = message;
+            
+            p1Score += p1Update;
+            p2Score += p2Update;
+            p1ScoreSpan.innerText = p1Score;
+            p2ScoreSpan.innerText = p2Score;
+
+            let targetNameP1 = currentMode === '1p' ? '플레이어' : '플레이어 1';
+            let targetNameP2 = currentMode === '1p' ? 'AI 봇' : '플레이어 2';
+
+            if (p1Score >= 10) {
+                alert(`🏆 ${targetNameP1}이(가) 최종 10점을 먼저 달성하여 승리했습니다!`);
+                resetGame();
+            } else if (p2Score >= 10) {
+                alert(`🏆 ${targetNameP2}이(가) 최종 10점을 먼저 달성하여 승리했습니다!`);
+                resetGame();
+            }
+        }
+
+        function resetGame() {
+            clearInterval(p1Interval);
+            clearInterval(p2Interval);
+            isRunning = false;
+            p1Stopped = false;
+            p2Stopped = false;
+
+            p1Score = 0;
+            p2Score = 0;
+            p1ScoreSpan.innerText = '0';
+            p2ScoreSpan.innerText = '0';
+            resultText.innerText = '버튼이나 Space 키를 눌러 게임을 시작하세요!';
+            btnStart.innerText = '게임 시작 (Space)';
+            btnStart.disabled = false;
+            btnStop.disabled = true;
+            p1FinalBox.innerText = '❓';
+            p2FinalBox.innerText = '❓';
+            p1FinalBox.classList.remove('selected');
+            p2FinalBox.classList.remove('selected');
+            document.querySelectorAll('.mini-hand').forEach(el => el.classList.remove('active'));
+        }
+    </script>
+</body>
+</html>

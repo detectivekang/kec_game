@@ -1,0 +1,12 @@
+[
+  {
+    "title": "가위 바위 보 게임",
+    "thumb": "images/Rock-paper-scissors",
+    "url": "games/Rock-paper-scissors.html"
+  },
+  {
+    "title": "인디언 카드게임",
+    "thumb": "images/card_game_1.PNG",
+    "url": "games/card_battle.html"
+  }
+]

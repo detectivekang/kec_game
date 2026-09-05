@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>전기차 레이싱</title>
+    <style>
+        body {
+            background-color: #f0f4f8;
+            font-family: 'Malgun Gothic', sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        #rules-title {
+            background-color: #FFF;
+            border: 2px solid #ccc;
+            padding: 10px;
+            margin: 10px auto;
+            max-width: 600px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        #gameCanvas {
+            background-color: #eef2f5;
+            border: 4px solid #333;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            display: block;
+            margin: 0 auto;
+        }
+        #rules-content {
+            background-color: #FFF;
+            border: 2px solid #ccc;
+            padding: 15px;
+            margin: 15px auto;
+            max-width: 600px;
+            text-align: left;
+            font-weight: bold;
+            line-height: 1.6;
+        }
+        .controls {
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-row { display: flex; gap: 8px; }
+        button {
+            width: 75px;
+            height: 50px;
+            font-size: 16px;
+            font-weight: bold;
+            background-color: #4A90E2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px #2a61a0;
+        }
+        button:active {
+            box-shadow: 0 2px #2a61a0;
+            transform: translateY(2px);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="rules-title">제목: 전기차<br>화면</div>
+
+    <canvas id="gameCanvas" width="600" height="400"></canvas>
+
+    <div id="rules-content">
+        규칙이 개임믹이루은전기차<br>
+        그<br>
+        이건나라아빵광엄마랑A이랑<br>
+        차무저할패<br>
+        는앞에눌르면앞으로가고<br>
+        위록를누르면위록<br>
+        옆을누르면옆으로가고<br>
+        뒤를누르면뒤로가고<br>
+        조겠다
+    </div>
+
+    <div class="controls">
+        <button onclick="movePlayer('up')">앞</button>
+        <div class="btn-row">
+            <button onclick="movePlayer('left')">옆(좌)</button>
+            <button onclick="movePlayer('down')">뒤</button>
+            <button onclick="movePlayer('right')">옆(우)</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // 4대의 캐릭터 설정 (아빠, 나, 엄마, AI)
+        const cars = [
+            { name: "아빠", x: 60,  y: 320, color: "#4A90E2", width: 70, height: 45 },
+            { name: "나",   x: 200, y: 320, color: "#FF6B6B", width: 60, height: 40 },
+            { name: "엄마", x: 340, y: 320, color: "#FFD166", width: 55, height: 35 },
+            { name: "AI",   x: 470, y: 320, color: "#06D6A0", width: 50, height: 30 }
+        ];
+
+        let gameOver = false;
+        let winner = "";
+
+        // 키보드 방향키 조작 지원
+        window.addEventListener("keydown", (e) => {
+            if (gameOver) return;
+            if (e.key === "ArrowUp") movePlayer('up');
+            if (e.key === "ArrowDown") movePlayer('down');
+            if (e.key === "ArrowLeft") movePlayer('left');
+            if (e.key === "ArrowRight") movePlayer('right');
+        });
+
+        function movePlayer(dir) {
+            if (gameOver) return;
+            const player = cars[1]; // '나' 조작
+            const step = 15;
+
+            if (dir === 'up' && player.y > 60) player.y -= step;
+            if (dir === 'down' && player.y < canvas.height - 50) player.y += step;
+            if (dir === 'left' && player.x > 160) player.x -= step;
+            if (dir === 'right' && player.x < 300) player.x += step;
+
+            checkWin(player);
+        }
+
+        function updateAI() {
+            if (gameOver) return;
+
+            cars.forEach((car, index) => {
+                if (index !== 1) { // '나'를 제외한 다른 차량 자동 이동
+                    const speed = Math.random() * 1.5 + 0.5;
+                    car.y -= speed;
+                    checkWin(car);
+                }
+            });
+        }
+
+        function checkWin(car) {
+            if (car.y <= 60 && !gameOver) {
+                gameOver = true;
+                winner = car.name;
+            }
+        }
+
+        function drawCar(car) {
+            // 차체
+            ctx.fillStyle = car.color;
+            ctx.fillRect(car.x, car.y, car.width, car.height);
+            ctx.strokeStyle = "#333";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(car.x, car.y, car.width, car.height);
+
+            // 창문 2개
+            ctx.fillStyle = "#FFFFFF";
+            ctx.fillRect(car.x + 6, car.y + 6, car.width / 2 - 8, 10);
+            ctx.fillRect(car.x + car.width / 2 + 2, car.y + 6, car.width / 2 - 8, 10);
+
+            // 바퀴
+            ctx.fillStyle = "#333";
+            ctx.beginPath();
+            ctx.arc(car.x + 12, car.y + car.height + 3, 5, 0, Math.PI * 2);
+            ctx.arc(car.x + car.width - 12, car.y + car.height + 3, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 이름표
+            ctx.fillStyle = "#000";
+            ctx.font = "bold 14px Malgun Gothic";
+            ctx.textAlign = "center";
+            ctx.fillText(car.name, car.x + car.width / 2, car.y - 8);
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 결승선
+            ctx.strokeStyle = "#FF4757";
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.setLineDash([10, 10]);
+            ctx.moveTo(0, 60);
+            ctx.lineTo(canvas.width, 60);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = "#FF4757";
+            ctx.font = "bold 16px Malgun Gothic";
+            ctx.textAlign = "center";
+            ctx.fillText("🏁 FINISH LINE 🏁", canvas.width / 2, 40);
+
+            // 레인 구분선
+            ctx.strokeStyle = "#DDD";
+            ctx.lineWidth = 2;
+            [140, 280, 420].forEach(x => {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            });
+
+            // 게임 진행
+            updateAI();
+            cars.forEach(drawCar);
+
+            // 게임 종료 화면
+            if (gameOver) {
+                ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = "#FFF";
+                ctx.font = "bold 30px Malgun Gothic";
+                ctx.textAlign = "center";
+                ctx.fillText(`🎉 ${winner} 승리! 🎉`, canvas.width / 2, canvas.height / 2 - 10);
+
+                ctx.font = "16px Malgun Gothic";
+                ctx.fillText("F5를 눌러 다시 시작하세요", canvas.width / 2, canvas.height / 2 + 30);
+            } else {
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
+        // 게임 시작
+        gameLoop();
+    </script>
+</body>
+</html>
