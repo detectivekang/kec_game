@@ -300,8 +300,8 @@
 
         <div class="btn-container" id="btn-area">
             <button class="action-btn" id="btn-start">게임 시작</button>
-            <button class="action-btn" id="btn-p1-stop" style="display:none;" disabled>P1 정지 (Space)</button>
-            <button class="action-btn" id="btn-p2-stop" style="display:none;" disabled>P2 정지 (Enter)</button>
+            <button class="action-btn" id="btn-p1-stop" style="display:none;" disabled>1P 정지 (Space)</button>
+            <button class="action-btn" id="btn-p2-stop" style="display:none;" disabled>2P 정지 (Enter)</button>
         </div>
     </div>
 
@@ -363,15 +363,15 @@
                 btnP2Stop.style.display = 'none';
             } else {
                 document.getElementById('mode-2p').classList.add('active');
-                labelP1.innerText = '플레이어 1';
-                labelP2.innerText = '플레이어 2';
-                titleP1.innerText = 'P1 패';
-                titleP2.innerText = 'P2 패';
-                boxLabelP1.innerText = 'P1';
-                boxLabelP2.innerText = 'P2';
-                guideBox.innerHTML = `<b>[2인용]</b> 모바일: P1 / P2 버튼 터치 (🔒 둘 다 눌러야 공개!)<br>PC: P1=[Space] / P2=[Enter]`;
-                btnP1Stop.innerText = 'P1 정지';
-                btnP2Stop.innerText = 'P2 정지';
+                labelP1.innerText = '1P 플레이어';
+                labelP2.innerText = '2P 플레이어';
+                titleP1.innerText = '1P 패';
+                titleP2.innerText = '2P 패';
+                boxLabelP1.innerText = '1P';
+                boxLabelP2.innerText = '2P';
+                guideBox.innerHTML = `<b>[2인용]</b> 모바일: 1P / 2P 버튼 터치 (🔒 둘 다 눌러야 공개!)<br>PC: 1P=[Space] / 2P=[Enter]`;
+                btnP1Stop.innerText = '1P 정지';
+                btnP2Stop.innerText = '2P 정지';
                 btnP1Stop.style.display = 'block';
                 btnP2Stop.style.display = 'block';
             }
@@ -488,7 +488,6 @@
                 p1FinalBox.classList.add('selected');
                 p1FinalBox.innerText = finalP1Hand;
             } else {
-                // 2인용 대결 시 하이라이트 완전히 제거하여 패 숨기기
                 document.querySelectorAll('#p1-h-0, #p1-h-1, #p1-h-2').forEach(el => el.classList.remove('active'));
                 p1FinalBox.innerText = '🔒';
             }
@@ -505,7 +504,6 @@
                 p2FinalBox.classList.add('selected');
                 p2FinalBox.innerText = finalP2Hand;
             } else {
-                // 2인용 대결 시 하이라이트 완전히 제거하여 패 숨기기
                 document.querySelectorAll('#p2-h-0, #p2-h-1, #p2-h-2').forEach(el => el.classList.remove('active'));
                 p2FinalBox.innerText = '🔒';
             }
@@ -515,8 +513,8 @@
             if (p1Stopped && p2Stopped) {
                 finishRound();
             } else {
-                if (p1Stopped) resultText.innerText = 'P1 선택 완료 (🔒)! P2 정지 대기 중...';
-                if (p2Stopped) resultText.innerText = 'P2 선택 완료 (🔒)! P1 정지 대기 중...';
+                if (p1Stopped) resultText.innerText = '1P 선택 완료 (🔒)! 2P 정지 대기 중...';
+                if (p2Stopped) resultText.innerText = '2P 선택 완료 (🔒)! 1P 정지 대기 중...';
             }
         }
 
@@ -533,7 +531,6 @@
             finalP1Hand = hands[curP1Index];
             finalP2Hand = hands[curP2Index];
 
-            // 2인용 대결 결과 및 하이라이트 동시에 공개
             p1FinalBox.innerText = finalP1Hand;
             p2FinalBox.innerText = finalP2Hand;
             p1FinalBox.classList.add('selected');
@@ -555,11 +552,11 @@
                 (finalP1Hand === '✊' && finalP2Hand === '✌️') ||
                 (finalP1Hand === '✋' && finalP2Hand === '✊')
             ) {
-                let winnerName = currentMode === '1p' ? '플레이어' : 'P1';
+                let winnerName = currentMode === '1p' ? '플레이어' : '1P';
                 message = `🎉 ${winnerName} 승리! (${finalP1Hand} vs ${finalP2Hand})`;
                 p1Update = 1;
             } else {
-                let winnerName = currentMode === '1p' ? 'AI 봇' : 'P2';
+                let winnerName = currentMode === '1p' ? 'AI 봇' : '2P';
                 message = `🎉 ${winnerName} 승리! (${finalP1Hand} vs ${finalP2Hand})`;
                 p2Update = 1;
             }
@@ -571,8 +568,8 @@
             p1ScoreSpan.innerText = p1Score;
             p2ScoreSpan.innerText = p2Score;
 
-            let targetNameP1 = currentMode === '1p' ? '플레이어' : 'P1';
-            let targetNameP2 = currentMode === '1p' ? 'AI 봇' : 'P2';
+            let targetNameP1 = currentMode === '1p' ? '플레이어' : '1P';
+            let targetNameP2 = currentMode === '1p' ? 'AI 봇' : '2P';
 
             if (p1Score >= 10) {
                 alert(`🏆 ${targetNameP1}이(가) 10점을 먼저 달성하여 최종 승리했습니다!`);
