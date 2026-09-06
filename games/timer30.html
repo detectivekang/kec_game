@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>30초를 맞춰라! - 은찬이의 미니게임</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', sans-serif; }
+        body { background-color: #f0f2f5; display: flex; justify-content: center; padding: 20px; min-height: 100vh; position: relative; }
+        
+        /* 왼쪽 상단 홈 버튼 */
+        .home-btn { position: absolute; top: 15px; left: 15px; text-decoration: none; color: #475569; font-weight: bold; font-size: 0.95rem; background: #ffffff; padding: 8px 14px; border-radius: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 5px; transition: 0.2s; }
+        .home-btn:hover { background: #e2e8f0; color: #0f172a; }
+
+        .container { background: #fff; width: 100%; max-width: 420px; padding: 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); text-align: center; margin-top: 40px; }
+        h1 { font-size: 1.5rem; color: #333; margin-bottom: 8px; }
+        .description { font-size: 0.9rem; color: #666; margin-bottom: 20px; line-height: 1.4; }
+        .timer-box { background: #1e293b; color: #38bdf8; font-size: 3.5rem; font-weight: bold; padding: 30px 0; border-radius: 12px; margin-bottom: 20px; font-family: monospace; }
+        
+        .btn { width: 100%; padding: 15px; font-size: 1.2rem; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: 0.2s; color: white; }
+        .btn-start { background-color: #22c55e; }
+        .btn-start:hover { background-color: #16a34a; }
+        .btn-stop { background-color: #ef4444; }
+        .btn-stop:hover { background-color: #dc2626; }
+        
+        .result-box { display: none; background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-top: 20px; }
+        .result-text { font-size: 1.05rem; color: #1e293b; margin-bottom: 12px; }
+        .save-form { display: flex; gap: 8px; }
+        .save-form input { flex: 1; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; font-size: 0.95rem; }
+        .save-form button { background: #3b82f6; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .save-form button:hover { background: #2563eb; }
+
+        .leaderboard { margin-top: 25px; text-align: left; }
+        .board-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 10px; }
+        .board-header h2 { font-size: 1.1rem; color: #333; }
+        .board-header .month-tag { font-size: 0.8rem; background: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 12px; font-weight: bold; }
+        
+        .rank-list { list-style: none; max-height: 220px; overflow-y: auto; }
+        .rank-item { display: flex; justify-content: space-between; padding: 10px 4px; border-bottom: 1px solid #f1f5f9; font-size: 0.95rem; }
+        .rank-item:nth-child(1) { font-weight: bold; color: #d97706; }
+        .rank-item:nth-child(2) { font-weight: bold; color: #4b5563; }
+        .rank-item:nth-child(3) { font-weight: bold; color: #b45309; }
+        .empty-msg { text-align: center; color: #94a3b8; padding: 20px 0; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+<!-- 왼쪽 상단 메인 홈 이동 버튼 -->
+<a href="../index.html" class="btn-home">🏠 홈으로</a>
+
+<div class="container">
+    <h1>⏱️ 30초를 맞춰라!</h1>
+    <p class="description">10초가 지나면 타이머가 가려집니다.<br>감으로 정확히 30.00초에 멈춰보세요!</p>
+
+    <div class="timer-box" id="timer">0.00</div>
+    <button class="btn btn-start" id="actionBtn" onclick="toggleTimer()">시작</button>
+
+    <div class="result-box" id="resultBox">
+        <div class="result-text" id="resultText"></div>
+        <div class="save-form" id="saveForm">
+            <input type="text" id="nickname" placeholder="닉네임 입력 (최대 8자)" maxlength="8">
+            <button onclick="saveScore()">기록 등록</button>
+        </div>
+    </div>
+
+    <div class="leaderboard">
+        <div class="board-header">
+            <h2>🏆 월간 랭킹</h2>
+            <span class="month-tag" id="currentMonthTag"></span>
+        </div>
+        <ul class="rank-list" id="rankList">
+            <li class="empty-msg">랭킹 불러오는 중...</li>
+        </ul>
+    </div>
+</div>
+
+<script type="module">
+    // 공통 Config 파일에서 db 불러오기
+    import { db } from './firebase-config.js';
+    import { collection, addDoc, query, where, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    let startTime;
+    let timerInterval;
+    let isRunning = false;
+    let finalTime = 0;
+
+    const timerEl = document.getElementById('timer');
+    const actionBtn = document.getElementById('actionBtn');
+    const resultBox = document.getElementById('resultBox');
+    const resultText = document.getElementById('resultText');
+    const saveForm = document.getElementById('saveForm');
+    const rankList = document.getElementById('rankList');
+    const currentMonthTag = document.getElementById('currentMonthTag');
+
+    // 현재 연-월 취득 (YYYY-MM) -> 매월 자동 초기화 기준
+    function getCurrentMonth() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        return `${year}-${month}`;
+    }
+
+    currentMonthTag.innerText = `${getCurrentMonth()}월`;
+
+    // 타이머 동작 로직
+    window.toggleTimer = function() {
+        if (!isRunning) {
+            isRunning = true;
+            startTime = Date.now();
+            actionBtn.innerText = '정지';
+            actionBtn.className = 'btn btn-stop';
+            resultBox.style.display = 'none';
+
+            timerInterval = setInterval(() => {
+                const elapsed = (Date.now() - startTime) / 1000;
+                if (elapsed < 10) {
+                    timerEl.innerText = elapsed.toFixed(2);
+                } else {
+                    timerEl.innerText = '??.??';
+                }
+            }, 10);
+        } else {
+            isRunning = false;
+            clearInterval(timerInterval);
+            finalTime = (Date.now() - startTime) / 1000;
+            
+            timerEl.innerText = finalTime.toFixed(2);
+            actionBtn.innerText = '다시 시작';
+            actionBtn.className = 'btn btn-start';
+
+            const diff = Math.abs(30 - finalTime).toFixed(2);
+            resultText.innerHTML = `내 기록: <b>${finalTime.toFixed(2)}초</b> (오차: ±${diff}초)`;
+            resultBox.style.display = 'block';
+            saveForm.style.display = 'flex';
+        }
+    };
+
+    // 기록 저장 함수
+    window.saveScore = async function() {
+        const nicknameInput = document.getElementById('nickname');
+        const nickname = nicknameInput.value.trim() || '익명';
+        const diff = parseFloat(Math.abs(30 - finalTime).toFixed(2));
+        const currentMonth = getCurrentMonth();
+
+        try {
+            await addDoc(collection(db, "timer30_ranks"), {
+                nickname: nickname,
+                time: finalTime.toFixed(2),
+                diff: diff,
+                month: currentMonth,
+                createdAt: new Date()
+            });
+            
+            nicknameInput.value = '';
+            saveForm.style.display = 'none';
+            loadLeaderboard();
+        } catch (e) {
+            console.error("기록 저장 실패:", e);
+            alert("기록 저장 실패: firebase-config.js 설정을 확인해주세요.");
+        }
+    };
+
+    // 이번 달 랭킹 불러오기
+    async function loadLeaderboard() {
+        const currentMonth = getCurrentMonth();
+        
+        try {
+            const q = query(
+                collection(db, "timer30_ranks"), 
+                where("month", "==", currentMonth),
+                orderBy("diff", "asc"), 
+                limit(10)
+            );
+            
+            const querySnapshot = await getDocs(q);
+            rankList.innerHTML = '';
+
+            let rank = 1;
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                const li = document.createElement('li');
+                li.className = 'rank-item';
+                li.innerHTML = `
+                    <span>${rank}위. ${data.nickname}</span>
+                    <span>${data.time}초 (±${data.diff}초)</span>
+                `;
+                rankList.appendChild(li);
+                rank++;
+            });
+
+            if (rank === 1) {
+                rankList.innerHTML = '<li class="empty-msg">이번 달 등록된 기록이 없습니다.<br>첫 번째 주인공이 되어보세요!</li>';
+            }
+        } catch (e) {
+            console.error("랭킹 로드 실패:", e);
+            rankList.innerHTML = '<li class="empty-msg">랭킹을 불러올 수 없습니다.</li>';
+        }
+    }
+
+    loadLeaderboard();
+</script>
+
+</body>
+</html>
