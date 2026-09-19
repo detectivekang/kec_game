@@ -568,6 +568,11 @@ function startRound() {
     
     updateUI();
     resetBalloonVisual();
+
+    // 라운드 시작 시 AI 턴이면 자동으로 AI 작동하도록 수정
+    if (mode === 'single' && activePlayer === 2) {
+        runAiTurn();
+    }
 }
 
 function resetBalloonVisual() {
