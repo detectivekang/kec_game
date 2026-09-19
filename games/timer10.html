@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>10초를 맞춰라!</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', sans-serif; }
+        body { background-color: #1a2332; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 0; color: #fff; }
+        
+        .container { background: #243044; width: 100%; max-width: 420px; min-height: 100vh; padding: 20px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.3); display: flex; flex-direction: column; }
+        
+        .header { display: flex; align-items: center; justify-content: flex-start; margin-bottom: 20px; }
+        .home-btn { text-decoration: none; color: #ffffff; font-weight: bold; font-size: 0.9rem; background: #334155; padding: 8px 14px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; transition: 0.2s; border: 1px solid #475569; }
+        .home-btn:hover { background: #475569; }
+
+        h1 { font-size: 1.5rem; color: #f8fafc; margin-bottom: 8px; }
+        .description { font-size: 0.85rem; color: #94a3b8; margin-bottom: 24px; line-height: 1.4; }
+        
+        .timer-box { background: #0f172a; color: #38bdf8; font-size: 3.5rem; font-weight: bold; padding: 30px 0; border-radius: 12px; margin-bottom: 20px; font-family: monospace; border: 1px solid #1e293b; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5); }
+        
+        .btn { width: 100%; padding: 15px; font-size: 1.2rem; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: 0.2s; color: white; }
+        .btn-start { background-color: #10b981; }
+        .btn-start:hover { background-color: #059669; }
+        .btn-stop { background-color: #ef4444; }
+        .btn-stop:hover { background-color: #dc2626; }
+        
+        .result-box { display: none; background: #1e293b; border: 1px solid #334155; padding: 16px; border-radius: 10px; margin-top: 20px; }
+        .result-text { font-size: 1rem; color: #f1f5f9; margin-bottom: 12px; }
+        .save-form { display: flex; gap: 8px; }
+        .save-form input { flex: 1; padding: 10px 12px; border: 1px solid #475569; background: #0f172a; color: #fff; border-radius: 6px; outline: none; font-size: 0.9rem; }
+        .save-form input::placeholder { color: #64748b; }
+        .save-form button { background: #3b82f6; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.9rem; }
+        .save-form button:hover { background: #2563eb; }
+        .save-form button:disabled { background: #94a3b8; cursor: not-allowed; opacity: 0.6; }
+
+        .leaderboard { margin-top: 30px; text-align: left; background: #1e293b; padding: 16px; border-radius: 10px; border: 1px solid #334155; }
+        .board-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 10px; margin-bottom: 10px; }
+        .board-header h2 { font-size: 1rem; color: #f8fafc; display: flex; align-items: center; gap: 6px; }
+        .board-header .month-tag { font-size: 0.75rem; background: #0284c7; color: #ffffff; padding: 2px 8px; border-radius: 12px; font-weight: bold; }
+        
+        .rank-list { list-style: none; max-height: 280px; overflow-y: auto; }
+        .rank-item { display: flex; justify-content: space-between; padding: 8px 4px; border-bottom: 1px solid #334155; font-size: 0.9rem; color: #cbd5e1; }
+        .rank-item:last-child { border-bottom: none; }
+        .rank-item:nth-child(1) { font-weight: bold; color: #fbbf24; }
+        .rank-item:nth-child(2) { font-weight: bold; color: #94a3b8; }
+        .rank-item:nth-child(3) { font-weight: bold; color: #d97706; }
+        .empty-msg { text-align: center; color: #64748b; padding: 20px 0; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <a href="../index.html" class="home-btn">🏠 홈으로</a>
+    </div>
+
+    <h1>⏱️ 10초를 맞춰라!</h1>
+    <p class="description">시작 버튼을 누르면 시간이 바로 가려집니다.<br>감으로 정확히 10.00초에 멈춰보세요!</p>
+
+    <div class="timer-box" id="timer">?.??</div>
+    <button class="btn btn-start" id="actionBtn">시작</button>
+
+    <div class="result-box" id="resultBox">
+        <div class="result-text" id="resultText"></div>
+        <div class="save-form" id="saveForm">
+            <input type="text" id="nickname" placeholder="닉네임 입력 (최대 8자)" maxlength="8">
+            <button id="saveBtn">기록 등록</button>
+        </div>
+    </div>
+
+    <div class="leaderboard">
+        <div class="board-header">
+            <h2>🏆 월간 랭킹 (Top 10)</h2>
+            <span class="month-tag" id="currentMonthTag"></span>
+        </div>
+        <ul class="rank-list" id="rankList">
+            <li class="empty-msg">랭킹 불러오는 중...</li>
+        </ul>
+    </div>
+</div>
+
+<script type="module">
+    import { db } from '../firebase-config.js';
+    import { collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    let startTime;
+    let timerInterval;
+    let isRunning = false;
+    let finalTime = 0;
+
+    const timerEl = document.getElementById('timer');
+    const actionBtn = document.getElementById('actionBtn');
+    const resultBox = document.getElementById('resultBox');
+    const resultText = document.getElementById('resultText');
+    const saveForm = document.getElementById('saveForm');
+    const saveBtn = document.getElementById('saveBtn');
+    const rankList = document.getElementById('rankList');
+    const currentMonthTag = document.getElementById('currentMonthTag');
+
+    function getCurrentMonth() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        return `${year}-${month}`;
+    }
+
+    currentMonthTag.innerText = `${getCurrentMonth()}월`;
+
+    // 시작 / 정지 버튼
+    actionBtn.addEventListener('click', () => {
+        if (!isRunning) {
+            isRunning = true;
+            startTime = Date.now();
+            actionBtn.innerText = '정지';
+            actionBtn.className = 'btn btn-stop';
+            resultBox.style.display = 'none';
+            timerEl.innerText = '?.??'; // 시작 직후 바로 ?.??로 표시
+
+            saveBtn.disabled = false;
+
+            timerInterval = setInterval(() => {
+                // 시간 진행 중에도 숫자를 감추고 ?.?? 유지
+                timerEl.innerText = '?.??';
+            }, 10);
+        } else {
+            isRunning = false;
+            clearInterval(timerInterval);
+            finalTime = (Date.now() - startTime) / 1000;
+            
+            timerEl.innerText = finalTime.toFixed(2);
+            actionBtn.innerText = '다시 시작';
+            actionBtn.className = 'btn btn-start';
+
+            const diff = Math.abs(10 - finalTime).toFixed(2);
+            resultText.innerHTML = `내 기록: <b>${finalTime.toFixed(2)}초</b> (오차: ±${diff}초)`;
+            resultBox.style.display = 'block';
+            saveForm.style.display = 'flex';
+        }
+    });
+
+    // 기록 저장
+    saveBtn.addEventListener('click', async () => {
+        const nicknameInput = document.getElementById('nickname');
+        const nickname = nicknameInput.value.trim() || '익명';
+        const diff = parseFloat(Math.abs(10 - finalTime).toFixed(2));
+        const currentMonth = getCurrentMonth();
+
+        saveBtn.disabled = true;
+
+        try {
+            await addDoc(collection(db, "timer10_ranks"), {
+                nickname: nickname,
+                time: finalTime.toFixed(2),
+                diff: diff,
+                month: currentMonth,
+                createdAt: new Date()
+            });
+            
+            nicknameInput.value = '';
+            saveForm.style.display = 'none';
+            alert('기록이 등록되었습니다!');
+            loadLeaderboard();
+        } catch (e) {
+            console.error("기록 저장 실패:", e);
+            alert("기록 저장 실패: Firestore 인덱스 및 네트워크 상태를 확인하세요.");
+            saveBtn.disabled = false;
+        }
+    });
+
+    // 랭킹 불러오기
+    async function loadLeaderboard() {
+        const currentMonth = getCurrentMonth();
+        
+        try {
+            const q = query(
+                collection(db, "timer10_ranks"), 
+                where("month", "==", currentMonth)
+            );
+            
+            const querySnapshot = await getDocs(q);
+            let ranks = [];
+
+            querySnapshot.forEach((doc) => {
+                ranks.push(doc.data());
+            });
+
+            // 오차(diff) 기준 오름차순 정렬 (오차가 적을수록 상위 랭킹)
+            ranks.sort((a, b) => a.diff - b.diff);
+
+            // 상위 10개만 자르기
+            const top10 = ranks.slice(0, 10);
+
+            rankList.innerHTML = '';
+
+            if (top10.length === 0) {
+                rankList.innerHTML = '<li class="empty-msg">이번 달 등록된 기록이 없습니다.<br>첫 번째 주인공이 되어보세요!</li>';
+                return;
+            }
+
+            top10.forEach((data, index) => {
+                const li = document.createElement('li');
+                li.className = 'rank-item';
+                li.innerHTML = `
+                    <span>${index + 1}위. ${data.nickname}</span>
+                    <span>${data.time}초 (±${data.diff}초)</span>
+                `;
+                rankList.appendChild(li);
+            });
+
+        } catch (e) {
+            console.error("랭킹 로드 실패:", e);
+            rankList.innerHTML = '<li class="empty-msg">랭킹을 불러올 수 없습니다.</li>';
+        }
+    }
+
+    loadLeaderboard();
+</script>
+
+</body>
+</html>

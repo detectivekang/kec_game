@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎈 아슬아슬 풍선 터뜨리기!</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; user-select: none; }
+        
+        body { 
+            background-color: #1a2332; 
+            display: flex; 
+            justify-content: center; 
+            align-items: flex-start; 
+            min-height: 100vh; 
+            padding: 0; 
+            color: #fff; 
+            overflow-x: hidden;
+        }
+        
+        .container { 
+            background: #243044; 
+            width: 100%; 
+            max-width: 440px; 
+            min-height: 100vh; 
+            padding: 20px; 
+            text-align: center; 
+            box-shadow: 0 4px 25px rgba(0,0,0,0.4); 
+            display: flex; 
+            flex-direction: column; 
+            position: relative;
+            background-image: radial-gradient(circle at 50% 30%, rgba(217, 70, 239, 0.08), transparent 70%);
+        }
+        
+        .header { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            margin-bottom: 15px; 
+        }
+
+        .home-btn { 
+            text-decoration: none; 
+            color: #ffffff; 
+            font-weight: bold; 
+            font-size: 0.9rem; 
+            background: #334155; 
+            padding: 8px 14px; 
+            border-radius: 8px; 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 6px; 
+            transition: 0.2s; 
+            border: 1px solid #475569; 
+        }
+        .home-btn:hover { background: #475569; }
+
+        .sound-btn {
+            background: #334155;
+            color: #e2e8f0;
+            border: 1px solid #475569;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: 0.2s;
+        }
+        .sound-btn:hover { background: #475569; }
+
+        h1 { font-size: 1.6rem; color: #f8fafc; margin-bottom: 6px; font-weight: 800; }
+        .pink-accent { color: #f472b6; text-shadow: 0 0 10px rgba(244, 114, 182, 0.3); }
+
+        .description { font-size: 0.85rem; color: #94a3b8; margin-bottom: 15px; line-height: 1.4; }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            background: #1e293b;
+            padding: 6px;
+            border-radius: 12px;
+            border: 1px solid #334155;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 10px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active {
+            background: #d946ef;
+            color: #ffffff;
+            box-shadow: 0 2px 10px rgba(217, 70, 239, 0.4);
+        }
+
+        .scoreboard {
+            background: #0f172a;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #1e293b;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .player-card {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .player-card.turn {
+            background: rgba(244, 114, 182, 0.15);
+            border: 1px solid #f472b6;
+            box-shadow: 0 0 12px rgba(244, 114, 182, 0.3);
+        }
+
+        .player-name { font-size: 0.85rem; color: #cbd5e1; font-weight: 600; }
+        .player-score { font-size: 1.4rem; font-weight: 800; color: #38bdf8; }
+
+        .round-tag {
+            background: #8b5cf6;
+            color: white;
+            font-size: 0.8rem;
+            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .stage {
+            flex: 1;
+            min-height: 300px;
+            background: #0f172a;
+            border-radius: 16px;
+            border: 1px solid #1e293b;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.6);
+            margin-bottom: 15px;
+        }
+
+        #particleCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .balloon-container {
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .balloon-container:active {
+            transform: scale(0.96);
+        }
+
+        .balloon-container.disabled {
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+
+        .balloon-svg {
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
+            transition: filter 0.3s ease;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn { 
+            width: 100%; 
+            padding: 14px; 
+            font-size: 1.1rem; 
+            font-weight: bold; 
+            border: none; 
+            border-radius: 10px; 
+            cursor: pointer; 
+            transition: all 0.2s ease; 
+            color: white; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-turn { 
+            background: linear-gradient(135deg, #e11d48, #be123c); 
+            box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);
+        }
+        .btn-turn:hover:not(:disabled) { 
+            background: linear-gradient(135deg, #f43f5e, #e11d48); 
+            transform: translateY(-1px);
+        }
+        .btn-turn:disabled {
+            background: #475569;
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .btn-restart {
+            background: #334155;
+            color: #cbd5e1;
+            font-size: 0.95rem;
+            padding: 10px;
+        }
+        .btn-restart:hover { background: #475569; color: #fff; }
+
+        .status-msg {
+            font-size: 0.9rem;
+            color: #38bdf8;
+            min-height: 24px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .status-msg.warning {
+            color: #fbbf24;
+        }
+
+        .modal-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            border-radius: 20px;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            background: #243044;
+            border: 2px solid #d946ef;
+            padding: 25px;
+            border-radius: 16px;
+            width: 85%;
+            max-width: 340px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(217, 70, 239, 0.3);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal-card {
+            transform: scale(1);
+        }
+
+        .modal-title { font-size: 1.5rem; color: #f8fafc; margin-bottom: 10px; font-weight: 800; }
+        .modal-body { font-size: 1rem; color: #cbd5e1; margin-bottom: 20px; line-height: 1.5; }
+        .modal-btn {
+            background: linear-gradient(135deg, #d946ef, #a855f7);
+            color: white;
+            font-weight: bold;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            width: 100%;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(217, 70, 239, 0.4);
+        }
+        .modal-btn:hover { background: linear-gradient(135deg, #e879f9, #c084fc); }
+
+        @keyframes popShake {
+            0% { transform: scale(var(--bg-scale)) translate(0, 0) rotate(0deg); }
+            20% { transform: scale(var(--bg-scale)) translate(-4px, 2px) rotate(-2deg); }
+            40% { transform: scale(var(--bg-scale)) translate(4px, -2px) rotate(2deg); }
+            60% { transform: scale(var(--bg-scale)) translate(-3px, -2px) rotate(-1deg); }
+            80% { transform: scale(var(--bg-scale)) translate(3px, 2px) rotate(1deg); }
+            100% { transform: scale(var(--bg-scale)) translate(0, 0) rotate(0deg); }
+        }
+
+        .shaking {
+            animation: popShake 0.15s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <a href="../index.html" class="home-btn">🏠 홈으로</a>
+        <button class="sound-btn" id="soundBtn">🔊 소리 ON</button>
+    </div>
+
+    <h1>🎈 아슬아슬 <span class="pink-accent">풍선 터뜨리기</span></h1>
+    <p class="description">한 턴에 <b>최대 5번</b>까지 누를 수 있습니다!<br><b>30 ~ 50번</b> 사이 랜덤에 터집니다. 터진 사람이 패배!</p>
+
+    <div class="mode-selector">
+        <button class="mode-btn active" id="btnSingle">혼자하기 (vs AI)</button>
+        <button class="mode-btn" id="btnMulti">같이하기 (2인)</button>
+    </div>
+
+    <div class="scoreboard">
+        <div class="player-card turn" id="p1Card">
+            <span class="player-name" id="p1Name">플레이어 1</span>
+            <span class="player-score" id="p1Score">0</span>
+        </div>
+        <div class="round-tag" id="roundTag">1 / 10 판</div>
+        <div class="player-card" id="p2Card">
+            <span class="player-name" id="p2Name">AI</span>
+            <span class="player-score" id="p2Score">0</span>
+        </div>
+    </div>
+
+    <div class="status-msg" id="statusMsg">나의 턴! 풍선을 눌러 부풀리세요 (1~5회 가능)</div>
+
+    <div class="stage" id="stage">
+        <canvas id="particleCanvas"></canvas>
+        <div class="balloon-container" id="balloonBtn">
+            <svg class="balloon-svg" id="balloonSvg" width="140" height="170" viewBox="0 0 140 170">
+                <defs>
+                    <radialGradient id="balloonGrad" cx="35%" cy="35%" r="65%">
+                        <stop offset="0%" stop-color="#f472b6" />
+                        <stop offset="50%" stop-color="#d946ef" />
+                        <stop offset="100%" stop-color="#831843" />
+                    </radialGradient>
+                    <radialGradient id="popGrad" cx="35%" cy="35%" r="65%">
+                        <stop offset="0%" stop-color="#fca5a5" />
+                        <stop offset="50%" stop-color="#ef4444" />
+                        <stop offset="100%" stop-color="#7f1d1d" />
+                    </radialGradient>
+                </defs>
+                <path d="M70,145 Q65,155 75,160 T68,168" stroke="#cbd5e1" stroke-width="2" fill="none" id="rope"/>
+                <polygon points="65,145 75,145 70,138" fill="#a21caf" id="knot"/>
+                <path id="balloonBody" d="M 70,10 C 20,10 10,65 10,90 C 10,125 55,140 70,140 C 85,140 130,125 130,90 C 130,65 120,10 70,10 Z" fill="url(#balloonGrad)"/>
+                <ellipse cx="45" cy="45" rx="14" ry="25" fill="rgba(255, 255, 255, 0.4)" transform="rotate(-25 45 45)" id="highlight"/>
+            </svg>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-turn" id="btnEndTurn" disabled>
+            <span>👉 턴 종료</span>
+        </button>
+        <button class="btn btn-restart" id="btnRestartGame">🔄 처음부터 다시하기</button>
+    </div>
+
+    <div class="modal-overlay" id="resultModal">
+        <div class="modal-card">
+            <div class="modal-title" id="modalTitle">🎉 라운드 종료!</div>
+            <div class="modal-body" id="modalBody">내용이 들어갑니다.</div>
+            <button class="modal-btn" id="modalBtn">다음 라운드</button>
+        </div>
+    </div>
+</div>
+
+<script>
+class SoundEngine {
+    constructor() {
+        this.ctx = null;
+        this.muted = false;
+    }
+
+    init() {
+        if (!this.ctx) {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            this.ctx = new AudioCtx();
+        }
+        if (this.ctx.state === 'suspended') {
+            this.ctx.resume();
+        }
+    }
+
+    playPumpSound(currentCount) {
+        if (this.muted) return;
+        this.init();
+        
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        
+        const baseFreq = 220 + (currentCount * 8);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(baseFreq, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.5, this.ctx.currentTime + 0.08);
+
+        gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.08);
+    }
+
+    playPopSound() {
+        if (this.muted) return;
+        this.init();
+
+        const bufferSize = this.ctx.sampleRate * 0.3;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
+
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(800, this.ctx.currentTime);
+        filter.frequency.exponentialRampToValueAtTime(50, this.ctx.currentTime + 0.3);
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(1.0, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        noise.start();
+        noise.stop(this.ctx.currentTime + 0.3);
+    }
+}
+
+const audio = new SoundEngine();
+
+const canvas = document.getElementById('particleCanvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+
+function resizeCanvas() {
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+class Particle {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.angle = Math.random() * Math.PI * 2;
+        this.speed = Math.random() * 8 + 2;
+        this.vx = Math.cos(this.angle) * this.speed;
+        this.vy = Math.sin(this.angle) * this.speed;
+        this.radius = Math.random() * 5 + 3;
+        const colors = ['#ef4444', '#dc2626', '#b91c1c', '#f472b6', '#7f1d1d'];
+        this.color = colors[Math.floor(Math.random() * colors.length)];
+        this.alpha = 1;
+        this.decay = Math.random() * 0.03 + 0.015;
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.15;
+        this.alpha -= this.decay;
+    }
+
+    draw() {
+        ctx.save();
+        ctx.globalAlpha = Math.max(this.alpha, 0);
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.restore();
+    }
+}
+
+function triggerPopParticles(centerX, centerY) {
+    particles = [];
+    for (let i = 0; i < 60; i++) {
+        particles.push(new Particle(centerX, centerY));
+    }
+}
+
+function animateParticles() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach((p, index) => {
+        p.update();
+        p.draw();
+        if (p.alpha <= 0) {
+            particles.splice(index, 1);
+        }
+    });
+    requestAnimationFrame(animateParticles);
+}
+animateParticles();
+
+let mode = 'single';
+let currentRound = 1;
+const maxRounds = 10;
+const MAX_TURNS_PER_PUMP = 5;
+
+let p1Score = 0;
+let p2Score = 0;
+
+let activePlayer = 1;
+let totalPumps = 0;
+let turnPumps = 0;
+let popThreshold = 0;
+let isGameOver = false;
+let isAiThinking = false;
+
+const btnSingle = document.getElementById('btnSingle');
+const btnMulti = document.getElementById('btnMulti');
+const p1NameEl = document.getElementById('p1Name');
+const p2NameEl = document.getElementById('p2Name');
+const p1ScoreEl = document.getElementById('p1Score');
+const p2ScoreEl = document.getElementById('p2Score');
+const p1Card = document.getElementById('p1Card');
+const p2Card = document.getElementById('p2Card');
+const roundTag = document.getElementById('roundTag');
+const statusMsg = document.getElementById('statusMsg');
+
+const balloonBtn = document.getElementById('balloonBtn');
+const balloonSvg = document.getElementById('balloonSvg');
+const balloonBody = document.getElementById('balloonBody');
+
+const btnEndTurn = document.getElementById('btnEndTurn');
+const btnRestartGame = document.getElementById('btnRestartGame');
+const soundBtn = document.getElementById('soundBtn');
+
+const resultModal = document.getElementById('resultModal');
+const modalTitle = document.getElementById('modalTitle');
+const modalBody = document.getElementById('modalBody');
+const modalBtn = document.getElementById('modalBtn');
+
+function startRound() {
+    totalPumps = 0;
+    turnPumps = 0;
+    isGameOver = false;
+    isAiThinking = false;
+    
+    popThreshold = Math.floor(Math.random() * 21) + 30; 
+    
+    updateUI();
+    resetBalloonVisual();
+}
+
+function resetBalloonVisual() {
+    balloonBody.setAttribute('fill', 'url(#balloonGrad)');
+    balloonSvg.style.setProperty('--bg-scale', 1);
+    balloonSvg.style.transform = 'scale(1)';
+    balloonSvg.classList.remove('shaking');
+    balloonBtn.classList.remove('disabled');
+}
+
+function updateUI() {
+    p1ScoreEl.innerText = p1Score;
+    p2ScoreEl.innerText = p2Score;
+    roundTag.innerText = `${currentRound} / ${maxRounds} 판`;
+
+    p1Card.classList.toggle('turn', activePlayer === 1);
+    p2Card.classList.toggle('turn', activePlayer === 2);
+
+    btnEndTurn.disabled = turnPumps < 1 || isGameOver || isAiThinking;
+
+    if (turnPumps >= MAX_TURNS_PER_PUMP) {
+        balloonBtn.classList.add('disabled');
+    } else {
+        balloonBtn.classList.remove('disabled');
+    }
+
+    if (isGameOver) return;
+
+    const currentPlayerName = activePlayer === 1 ? '플레이어 1' : (mode === 'single' ? 'AI' : '플레이어 2');
+    
+    statusMsg.classList.remove('warning');
+    if (mode === 'single' && activePlayer === 2) {
+        statusMsg.innerText = `🤖 AI가 풍선을 조심스럽게 부푸는 중...`;
+    } else if (turnPumps >= MAX_TURNS_PER_PUMP) {
+        statusMsg.classList.add('warning');
+        statusMsg.innerText = `⚠️ 턴당 최대 횟수(5회) 완료! '턴 종료'를 눌러주세요.`;
+    } else {
+        statusMsg.innerText = `👉 ${currentPlayerName}의 턴! 풍선을 눌러 부풀리세요 (${turnPumps}/5회)`;
+    }
+}
+
+function pumpBalloon() {
+    if (isGameOver || isAiThinking) return;
+    if (mode === 'single' && activePlayer === 2) return;
+    if (turnPumps >= MAX_TURNS_PER_PUMP) return;
+
+    executePump();
+}
+
+function executePump() {
+    totalPumps++;
+    turnPumps++;
+
+    audio.playPumpSound(totalPumps);
+
+    const maxScale = 2.3;
+    const progress = Math.min(totalPumps / 50, 1);
+    const scale = 1 + (progress * (maxScale - 1));
+
+    balloonSvg.style.setProperty('--bg-scale', scale);
+    balloonSvg.style.transform = `scale(${scale})`;
+
+    if (totalPumps >= popThreshold - 5) {
+        balloonSvg.classList.add('shaking');
+    }
+
+    if (totalPumps >= popThreshold) {
+        popBalloon();
+    } else {
+        updateUI();
+    }
+}
+
+function popBalloon() {
+    isGameOver = true;
+    audio.playPopSound();
+
+    balloonBody.setAttribute('fill', 'url(#popGrad)');
+    balloonSvg.classList.remove('shaking');
+    
+    const rect = balloonBtn.getBoundingClientRect();
+    const stageRect = document.getElementById('stage').getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2 - stageRect.left;
+    const centerY = rect.top + rect.height / 2 - stageRect.top;
+    
+    triggerPopParticles(centerX, centerY);
+
+    balloonSvg.style.transform = 'scale(0.2)';
+    balloonSvg.style.opacity = '0.3';
+
+    const loser = activePlayer;
+    const winner = loser === 1 ? 2 : 1;
+
+    if (winner === 1) p1Score++;
+    else p2Score++;
+
+    const loserName = loser === 1 ? '플레이어 1' : (mode === 'single' ? 'AI' : '플레이어 2');
+    const winnerName = winner === 1 ? '플레이어 1' : (mode === 'single' ? 'AI' : '플레이어 2');
+
+    statusMsg.innerText = `💥 펑! ${loserName}이(가) 풍선을 터뜨렸습니다!`;
+
+    setTimeout(() => {
+        showRoundResultModal(winnerName, loserName);
+    }, 1200);
+}
+
+function endTurn() {
+    if (isGameOver || turnPumps < 1) return;
+
+    turnPumps = 0;
+    activePlayer = activePlayer === 1 ? 2 : 1;
+    
+    updateUI();
+
+    if (mode === 'single' && activePlayer === 2 && !isGameOver) {
+        runAiTurn();
+    }
+}
+
+function runAiTurn() {
+    isAiThinking = true;
+    btnEndTurn.disabled = true;
+
+    let aiPumps = Math.floor(Math.random() * 4) + 1; // 1~4회
+    
+    if (totalPumps > 25 && Math.random() < 0.6) {
+        aiPumps = Math.floor(Math.random() * 2) + 1;
+    }
+
+    let performed = 0;
+
+    function stepAi() {
+        if (isGameOver) {
+            isAiThinking = false;
+            return;
+        }
+
+        executePump();
+        performed++;
+
+        if (isGameOver) {
+            isAiThinking = false;
+            return;
+        }
+
+        if (performed < aiPumps && turnPumps < MAX_TURNS_PER_PUMP) {
+            setTimeout(stepAi, 600 + Math.random() * 300);
+        } else {
+            setTimeout(() => {
+                isAiThinking = false;
+                endTurn();
+            }, 500);
+        }
+    }
+
+    setTimeout(stepAi, 700);
+}
+
+function showRoundResultModal(winnerName, loserName) {
+    if (currentRound >= maxRounds) {
+        modalTitle.innerText = "🏆 최종 게임 종료!";
+        let finalWinner = "";
+        if (p1Score > p2Score) finalWinner = "🎉 플레이어 1 최종 우승!";
+        else if (p2Score > p1Score) finalWinner = `🎉 ${p2NameEl.innerText} 최종 우승!`;
+        else finalWinner = "🤝 무승부입니다!";
+
+        modalBody.innerHTML = `<b>최종 스코어</b><br>플레이어 1: ${p1Score}승 <br>${p2NameEl.innerText}: ${p2Score}승<br><br><b>${finalWinner}</b>`;
+        modalBtn.innerText = "새 게임 시작";
+        modalBtn.onclick = resetFullGame;
+    } else {
+        modalTitle.innerText = `💥 ${loserName} 패배!`;
+        modalBody.innerHTML = `<b>${winnerName}</b>이(가) 승리를 가져갑니다!<br><br>현재 스코어: <b>${p1Score} vs ${p2Score}</b>`;
+        modalBtn.innerText = "다음 라운드 시작";
+        modalBtn.onclick = () => {
+            currentRound++;
+            balloonSvg.style.opacity = '1';
+            resultModal.classList.remove('active');
+            startRound();
+        };
+    }
+    resultModal.classList.add('active');
+}
+
+function resetFullGame() {
+    currentRound = 1;
+    p1Score = 0;
+    p2Score = 0;
+    activePlayer = 1;
+    balloonSvg.style.opacity = '1';
+    resultModal.classList.remove('active');
+    startRound();
+}
+
+balloonBtn.addEventListener('click', () => {
+    audio.init();
+    pumpBalloon();
+});
+
+btnEndTurn.addEventListener('click', endTurn);
+
+btnRestartGame.addEventListener('click', () => {
+    if (confirm("정말로 처음부터 다시 시작하시겠습니까?")) {
+        resetFullGame();
+    }
+});
+
+btnSingle.addEventListener('click', () => {
+    if (mode === 'single') return;
+    mode = 'single';
+    btnSingle.classList.add('active');
+    btnMulti.classList.remove('active');
+    p2NameEl.innerText = "AI";
+    resetFullGame();
+});
+
+btnMulti.addEventListener('click', () => {
+    if (mode === 'multi') return;
+    mode = 'multi';
+    btnMulti.classList.add('active');
+    btnSingle.classList.remove('active');
+    p2NameEl.innerText = "플레이어 2";
+    resetFullGame();
+});
+
+soundBtn.addEventListener('click', () => {
+    audio.muted = !audio.muted;
+    soundBtn.innerText = audio.muted ? "🔇 소리 OFF" : "🔊 소리 ON";
+});
+
+window.onload = () => {
+    startRound();
+};
+</script>
+</body>
+</html>

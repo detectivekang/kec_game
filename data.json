@@ -13,5 +13,15 @@
     "title": "30초를 맞춰라 게임",
     "thumb": "images/timer30.PNG",
     "url": "games/timer30.html"
+  },
+  {
+    "title": "10초를 맞춰라 게임",
+    "thumb": "images/timer10.jpg",
+    "url": "games/timer30.html"
+  },
+  {
+    "title": "풍선 게임",
+    "thumb": "images/balloon_game.jpg",
+    "url": "games/balloon_game.html"
   }
 ]
